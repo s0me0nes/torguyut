@@ -1,0 +1,434 @@
+/* Общие стили */
+body {
+    padding-top: 76px;
+}
+
+/* Поисковая секция */
+.search-section {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                url('https://via.placeholder.com/1920x600') no-repeat center center;
+    background-size: cover;
+    padding: 100px 0;
+    margin-top: -76px;
+}
+
+.search-box {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Карточки объектов */
+.property-card {
+    transition: transform 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+}
+
+.property-card:hover {
+    transform: translateY(-5px);
+}
+
+.property-image {
+    position: relative;
+    overflow: hidden;
+}
+
+.property-image img {
+    height: 200px;
+    object-fit: cover;
+}
+
+.favorite-btn {
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.favorite-btn:hover {
+    opacity: 1;
+}
+
+.property-features {
+    display: flex;
+    gap: 15px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.property-features span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Услуги */
+.services-section .card {
+    transition: transform 0.3s ease;
+}
+
+.services-section .card:hover {
+    transform: translateY(-5px);
+}
+
+/* Контактная форма */
+.contact-form {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Модальные окна */
+.modal-content {
+    border: none;
+    border-radius: 15px;
+}
+
+.modal-header {
+    border-bottom: 1px solid #eee;
+}
+
+.modal-footer {
+    border-top: 1px solid #eee;
+}
+
+/* Социальные иконки */
+.social-links a {
+    transition: opacity 0.3s ease;
+}
+
+.social-links a:hover {
+    opacity: 0.7;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .search-section {
+        padding: 50px 0;
+    }
+
+    .property-features {
+        flex-wrap: wrap;
+    }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Кастомные стили для элементов форм */
+.form-control:focus,
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+/* Стили для фильтров */
+.filter-badge {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 5px 15px;
+    margin: 5px;
+    display: inline-block;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-badge:hover,
+.filter-badge.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Стили для галереи изображений */
+.property-gallery {
+    position: relative;
+    overflow: hidden;
+}
+
+.gallery-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.gallery-nav:hover {
+    background: white;
+}
+
+.gallery-prev {
+    left: 10px;
+}
+
+.gallery-next {
+    right: 10px;
+}
+
+/* Стили для отзывов */
+.review-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 10px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.review-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.review-author img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Стили для рейтинга */
+.rating {
+    color: #ffc107;
+}
+
+/* Стили для меток */
+.label {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.label-new {
+    background: #28a745;
+    color: white;
+}
+
+.label-hot {
+    background: #dc3545;
+    color: white;
+}
+
+.label-sale {
+    background: #ffc107;
+    color: black;
+}
+
+/* Стили для сравнения объектов */
+.compare-table th {
+    min-width: 200px;
+}
+
+.compare-feature-present {
+    color: #28a745;
+}
+
+.compare-feature-absent {
+    color: #dc3545;
+}
+
+/* Стили для ипотечного калькулятора */
+.calculator-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.calculator-result {
+    background: #e9ecef;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+/* Стили для уведомлений */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 5px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Стили для карты */
+.map-container {
+    height: 400px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Стили для виртуального тура */
+.virtual-tour {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.virtual-tour iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Стили для чата */
+.chat-container {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.chat-message {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
+}
+
+.chat-message-received {
+    background: #f8f9fa;
+    margin-right: auto;
+}
+
+.chat-message-sent {
+    background: #007bff;
+    color: white;
+    margin-left: auto;
+}
+
+/* Стили для документов */
+.document-card {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.document-card:hover {
+    background: #f8f9fa;
+}
+
+.document-icon {
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+/* Стили для избранного */
+.favorites-empty {
+    text-align: center;
+    padding: 50px 0;
+}
+
+.favorites-empty i {
+    font-size: 48px;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+/* Стили для профиля пользователя */
+.profile-header {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                url('https://via.placeholder.com/1920x300') no-repeat center center;
+    background-size: cover;
+    padding: 50px 0;
+    color: white;
+    margin-bottom: 30px;
+}
+
+.profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 5px solid white;
+    margin-bottom: 20px;
+}
+
+/* Стили для статистики */
+.stats-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.stats-number {
+    font-size: 36px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+/* Стили для уведомлений */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
