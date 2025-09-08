@@ -115,6 +115,18 @@ class BazaarApp {
                 })
             });
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server error:', response.status, errorText);
+                return; // Fallback to local data
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Non-JSON response from users API');
+                return; // Fallback to local data
+            }
+
             const result = await response.json();
             if (result.success) {
                 // Обновляем данные пользователя с сервера
@@ -152,14 +164,40 @@ class BazaarApp {
             if (!this.selectedCity) return;
             
             const response = await fetch(`${this.API_BASE}/publications/city/${this.selectedCity}`);
+            
+            if (!response.ok) {
+                console.error('Server not available, using local data');
+                this.loadLocalPublications();
+                return;
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Non-JSON response, using local data');
+                this.loadLocalPublications();
+                return;
+            }
+            
             const result = await response.json();
             
             if (result.success) {
                 this.publications = result.data;
+            } else {
+                this.loadLocalPublications();
             }
         } catch (error) {
             console.error('Error loading publications from server:', error);
-            // Fallback to empty array
+            this.loadLocalPublications();
+        }
+    }
+
+    loadLocalPublications() {
+        // Fallback to localStorage
+        const savedData = localStorage.getItem('bazaar_app_data');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            this.publications = data.publications || [];
+        } else {
             this.publications = [];
         }
     }
@@ -286,11 +324,33 @@ class BazaarApp {
             });
         });
 
+        // Обработчики навигации между списком и формой
+        document.getElementById('floating-add-btn').addEventListener('click', () => {
+            this.showPublicationForm();
+        });
+
+        document.getElementById('back-to-list-btn').addEventListener('click', () => {
+            this.showPublicationsList();
+        });
+
         // Обработчики полей формы
         ['item-title', 'item-description', 'item-price'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => {
                 this.validateForm();
             });
+        });
+
+        // Обработчики для лайков и комментариев (делегирование событий)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.like-btn')) {
+                const publicationId = e.target.closest('.like-btn').dataset.publicationId;
+                this.handleLike(publicationId);
+            }
+            
+            if (e.target.closest('.comment-btn')) {
+                const publicationId = e.target.closest('.comment-btn').dataset.publicationId;
+                this.showCommentModal(publicationId);
+            }
         });
     }
 
@@ -395,6 +455,21 @@ class BazaarApp {
                 body: formData
             });
 
+            // Проверяем статус ответа
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server error:', response.status, errorText);
+                throw new Error(`Server error: ${response.status} - ${errorText}`);
+            }
+
+            // Проверяем, что ответ - это JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const errorText = await response.text();
+                console.error('Non-JSON response:', errorText);
+                throw new Error('Server returned non-JSON response. Make sure backend is running.');
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -412,6 +487,9 @@ class BazaarApp {
                 this.updateUI();
                 this.clearForm();
                 
+                // Возвращаемся к списку объявлений
+                this.showPublicationsList();
+                
                 // Показываем уведомление
                 this.telegram.showAlert('Объявление опубликовано!');
                 
@@ -422,7 +500,15 @@ class BazaarApp {
             }
         } catch (error) {
             console.error('Error publishing:', error);
-            this.telegram.showAlert(`Ошибка: ${error.message}`);
+            
+            // Если сервер недоступен, используем локальное сохранение
+            if (error.message.includes('Server returned non-JSON response') || 
+                error.message.includes('Server error: 404')) {
+                console.log('Server unavailable, using local storage');
+                this.publishLocally(title, description, price, images);
+            } else {
+                this.telegram.showAlert(`Ошибка: ${error.message}`);
+            }
         } finally {
             // Восстанавливаем кнопку
             btn.querySelector('.btn-text').textContent = originalText;
@@ -531,6 +617,11 @@ class BazaarApp {
 
     updatePublicationsList() {
         const container = document.getElementById('publications-container');
+        const countElement = document.getElementById('publications-count');
+        
+        // Обновляем счетчик объявлений
+        const count = this.publications.length;
+        countElement.textContent = `${count} ${this.getPluralForm(count, 'объявление', 'объявления', 'объявлений')}`;
         
         if (this.publications.length === 0) {
             container.innerHTML = '<div class="loading">Пока нет объявлений</div>';
@@ -538,7 +629,7 @@ class BazaarApp {
         }
         
         container.innerHTML = this.publications.map(pub => `
-            <div class="publication-item">
+            <div class="publication-item" data-publication-id="${pub.id}">
                 <div class="publication-header">
                     <div class="publication-title">${this.escapeHtml(pub.title)}</div>
                     <div class="publication-price">${pub.price} ₽</div>
@@ -546,9 +637,23 @@ class BazaarApp {
                 <div class="publication-description">${this.escapeHtml(pub.description)}</div>
                 ${pub.images.length > 0 ? `
                     <div class="publication-images">
-                        ${pub.images.map(img => `<img src="${img.data}" alt="${img.name}">`).join('')}
+                        ${pub.images.map(img => `<img src="${img.data || img}" alt="${img.name || 'Image'}">`).join('')}
                     </div>
                 ` : ''}
+                <div class="publication-stats">
+                    <div class="stat-item">
+                        <span class="stat-icon">👁️</span>
+                        <span class="stat-count">${pub.stats?.views || 0}</span>
+                    </div>
+                    <div class="stat-item like-btn" data-publication-id="${pub.id}">
+                        <span class="stat-icon">❤️</span>
+                        <span class="stat-count">${pub.stats?.likes || 0}</span>
+                    </div>
+                    <div class="stat-item comment-btn" data-publication-id="${pub.id}">
+                        <span class="stat-icon">💬</span>
+                        <span class="stat-count">${pub.stats?.comments || 0}</span>
+                    </div>
+                </div>
                 <div class="publication-meta">
                     <div class="publication-author">
                         <img src="${pub.author.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNlMGUwZTAiLz4KPHN2ZyB4PSI0IiB5PSI0IiB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xMiAxMkMxNC4yMDkxIDEyIDE2IDEwLjIwOTEgMTYgOEMxNiA1Ljc5MDg2IDE0LjIwOTEgNCAxMiA0QzkuNzkwODYgNCA4IDUuNzkwODYgOCA4QzggMTAuMjA5MSA5Ljc5MDg2IDEyIDEyIDEyWiIgZmlsbD0iIzY2NjY2NiIvPgo8cGF0aCBkPSJNMTIgMTRDOS4zOTA4NiAxNCA3LjE2NjY3IDE1LjQxNjcgNiAxNy40MTY3QzYgMTkuNDE2NyA5LjM5MDg2IDIyIDEyIDIyQzE0LjYwOTEgMjIgMTcgMTkuNDE2NyAxNyAxNy40MTY3QzE3IDE1LjQxNjcgMTQuNjA5MSAxNCAxMiAxNFoiIGZpbGw9IiM2NjY2NjYiLz4KPC9zdmc+Cjwvc3ZnPgo='}" alt="Avatar" class="author-avatar">
@@ -558,12 +663,70 @@ class BazaarApp {
                 </div>
             </div>
         `).join('');
+
+        // Отслеживаем просмотры для всех публикаций
+        this.trackViewsForAllPublications();
+    }
+
+    async trackViewsForAllPublications() {
+        // Отправляем запросы на отслеживание просмотров для всех публикаций
+        const viewPromises = this.publications.map(pub => 
+            this.trackView(pub.id).catch(error => {
+                console.error(`Error tracking view for publication ${pub.id}:`, error);
+            })
+        );
+        
+        await Promise.allSettled(viewPromises);
+    }
+
+    async trackView(publicationId) {
+        try {
+            const response = await fetch(`${this.API_BASE}/publications/${publicationId}/view`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    telegram_id: this.user.id
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    // Обновляем счетчик просмотров в UI
+                    const viewItem = document.querySelector(`[data-publication-id="${publicationId}"] .stat-item:first-child`);
+                    if (viewItem) {
+                        const countElement = viewItem.querySelector('.stat-count');
+                        countElement.textContent = result.data.viewCount;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error tracking view:', error);
+        }
     }
 
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    getPluralForm(count, form1, form2, form5) {
+        const n = Math.abs(count) % 100;
+        const n1 = n % 10;
+        
+        if (n > 10 && n < 20) {
+            return form5;
+        }
+        if (n1 > 1 && n1 < 5) {
+            return form2;
+        }
+        if (n1 === 1) {
+            return form1;
+        }
+        return form5;
     }
 
     showError(message) {
@@ -670,6 +833,229 @@ class BazaarApp {
 
     getCurrentCity() {
         return this.cities[this.selectedCity] || null;
+    }
+
+    // Методы навигации между списком и формой
+    showPublicationsList() {
+        document.getElementById('publications-list').style.display = 'block';
+        document.getElementById('publication-form').style.display = 'none';
+        document.getElementById('floating-add-btn').style.display = 'flex';
+    }
+
+    showPublicationForm() {
+        document.getElementById('publications-list').style.display = 'none';
+        document.getElementById('publication-form').style.display = 'block';
+        document.getElementById('floating-add-btn').style.display = 'none';
+        
+        // Очищаем форму при открытии
+        this.clearForm();
+    }
+
+    // Fallback метод для локальной публикации
+    async publishLocally(title, description, price, images) {
+        try {
+            // Создание объявления
+            const publication = {
+                id: Date.now(),
+                title,
+                description,
+                price,
+                images: await this.processImages(images),
+                author: {
+                    id: this.user.id,
+                    name: `${this.user.firstName} ${this.user.lastName}`.trim(),
+                    username: this.user.username,
+                    avatar: this.user.photoUrl
+                },
+                createdAt: new Date().toISOString(),
+                stats: {
+                    views: 0,
+                    likes: 0,
+                    comments: 0
+                }
+            };
+
+            // Добавление в список
+            this.publications.unshift(publication);
+            
+            // Списание кристалла
+            this.crystals--;
+            this.lastPublicationTime = new Date();
+            
+            // Сохранение данных
+            this.saveAppData();
+            
+            // Обновление UI
+            this.updateUI();
+            this.clearForm();
+            
+            // Возвращаемся к списку объявлений
+            this.showPublicationsList();
+            
+            // Показываем уведомление
+            this.telegram.showAlert('Объявление сохранено локально (сервер недоступен)');
+            
+            // Запуск антифлуд таймера
+            this.startAntifloodTimer();
+        } catch (error) {
+            console.error('Error in local publish:', error);
+            this.telegram.showAlert('Ошибка при сохранении объявления');
+        }
+    }
+
+    // Методы для работы с лайками и комментариями
+    async handleLike(publicationId) {
+        try {
+            const response = await fetch(`${this.API_BASE}/publications/${publicationId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    telegram_id: this.user.id
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    // Обновляем счетчик лайков в UI
+                    const likeBtn = document.querySelector(`[data-publication-id="${publicationId}"] .like-btn`);
+                    if (likeBtn) {
+                        const countElement = likeBtn.querySelector('.stat-count');
+                        countElement.textContent = result.data.likeCount;
+                        
+                        // Анимация лайка
+                        likeBtn.classList.add('liked');
+                        setTimeout(() => {
+                            likeBtn.classList.remove('liked');
+                        }, 600);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error liking publication:', error);
+        }
+    }
+
+    showCommentModal(publicationId) {
+        // Создаем модальное окно для комментариев
+        const modal = document.createElement('div');
+        modal.className = 'comment-modal';
+        modal.innerHTML = `
+            <div class="comment-modal-content">
+                <div class="comment-modal-header">
+                    <h3>Комментарии</h3>
+                    <button class="close-comment-modal">&times;</button>
+                </div>
+                <div class="comment-modal-body">
+                    <div class="comments-list" id="comments-list-${publicationId}">
+                        <div class="loading">Загрузка комментариев...</div>
+                    </div>
+                    <div class="comment-form">
+                        <textarea id="comment-input-${publicationId}" placeholder="Напишите комментарий..." maxlength="500"></textarea>
+                        <button id="submit-comment-${publicationId}" class="submit-comment-btn">Отправить</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.classList.add('show');
+
+        // Загружаем комментарии
+        this.loadComments(publicationId);
+
+        // Обработчики событий
+        modal.querySelector('.close-comment-modal').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        modal.querySelector(`#submit-comment-${publicationId}`).addEventListener('click', () => {
+            this.submitComment(publicationId);
+        });
+
+        modal.querySelector(`#comment-input-${publicationId}`).addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.submitComment(publicationId);
+            }
+        });
+    }
+
+    async loadComments(publicationId) {
+        try {
+            const response = await fetch(`${this.API_BASE}/publications/${publicationId}/comments`);
+            const result = await response.json();
+            
+            const commentsList = document.getElementById(`comments-list-${publicationId}`);
+            
+            if (result.success && result.data.length > 0) {
+                commentsList.innerHTML = result.data.map(comment => `
+                    <div class="comment-item">
+                        <div class="comment-author">
+                            <img src="${comment.author.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNlMGUwZTAiLz4KPHN2ZyB4PSI0IiB5PSI0IiB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xMiAxMkMxNC4yMDkxIDEyIDE2IDEwLjIwOTEgMTYgOEMxNiA1Ljc5MDg2IDE0LjIwOTEgNCAxMiA0QzkuNzkwODYgNCA4IDUuNzkwODYgOCA4QzggMTAuMjA5MSA5Ljc5MDg2IDEyIDEyIDEyWiIgZmlsbD0iIzY2NjY2NiIvPgo8cGF0aCBkPSJNMTIgMTRDOS4zOTA4NiAxNCA3LjE2NjY3IDE1LjQxNjcgNiAxNy40MTY3QzYgMTkuNDE2NyA5LjM5MDg2IDIyIDEyIDIyQzE0LjYwOTEgMjIgMTcgMTkuNDE2NyAxNyAxNy40MTY3QzE3IDE1LjQxNjcgMTQuNjA5MSAxNCAxMiAxNFoiIGZpbGw9IiM2NjY2NjYiLz4KPC9zdmc+Cjwvc3ZnPgo='}" alt="Avatar" class="comment-avatar">
+                            <span class="comment-author-name">${this.escapeHtml(comment.author.name)}</span>
+                            <span class="comment-date">${new Date(comment.created_at).toLocaleString('ru-RU')}</span>
+                        </div>
+                        <div class="comment-text">${this.escapeHtml(comment.comment_text)}</div>
+                    </div>
+                `).join('');
+            } else {
+                commentsList.innerHTML = '<div class="no-comments">Пока нет комментариев</div>';
+            }
+        } catch (error) {
+            console.error('Error loading comments:', error);
+            document.getElementById(`comments-list-${publicationId}`).innerHTML = 
+                '<div class="error">Ошибка загрузки комментариев</div>';
+        }
+    }
+
+    async submitComment(publicationId) {
+        const input = document.getElementById(`comment-input-${publicationId}`);
+        const commentText = input.value.trim();
+        
+        if (!commentText) return;
+
+        try {
+            const response = await fetch(`${this.API_BASE}/publications/${publicationId}/comment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    telegram_id: this.user.id,
+                    comment_text: commentText
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    // Очищаем поле ввода
+                    input.value = '';
+                    
+                    // Перезагружаем комментарии
+                    this.loadComments(publicationId);
+                    
+                    // Обновляем счетчик комментариев в основном списке
+                    const commentBtn = document.querySelector(`[data-publication-id="${publicationId}"] .comment-btn`);
+                    if (commentBtn) {
+                        const countElement = commentBtn.querySelector('.stat-count');
+                        countElement.textContent = result.data.comments.length;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error submitting comment:', error);
+            this.telegram.showAlert('Ошибка при отправке комментария');
+        }
     }
 }
 

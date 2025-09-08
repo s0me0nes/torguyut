@@ -38,6 +38,18 @@ class PublicationController {
         
         // Delete publication
         this.router.delete('/:id', this.deletePublication.bind(this));
+        
+        // Like/unlike publication
+        this.router.post('/:id/like', this.toggleLike.bind(this));
+        
+        // Add comment to publication
+        this.router.post('/:id/comment', this.addComment.bind(this));
+        
+        // Get comments for publication
+        this.router.get('/:id/comments', this.getComments.bind(this));
+        
+        // Track view
+        this.router.post('/:id/view', this.trackView.bind(this));
     }
 
     async getPublicationsByCity(req, res) {
@@ -45,7 +57,7 @@ class PublicationController {
             const { city } = req.params;
             const { limit = 50, offset = 0 } = req.query;
 
-            const publications = await this.db.getPublicationsByCity(
+            const publications = await this.db.getPublicationsByCityWithStats(
                 city, 
                 parseInt(limit), 
                 parseInt(offset)
@@ -73,7 +85,7 @@ class PublicationController {
     async getPublicationById(req, res) {
         try {
             const { id } = req.params;
-            const publication = await this.db.getPublicationById(id);
+            const publication = await this.db.getPublicationByIdWithStats(id);
 
             if (!publication) {
                 return res.status(404).json({
@@ -294,6 +306,163 @@ class PublicationController {
             res.status(500).json({
                 success: false,
                 error: 'Failed to delete publication',
+                message: error.message
+            });
+        }
+    }
+
+    async toggleLike(req, res) {
+        try {
+            const { id } = req.params;
+            const { telegram_id } = req.body;
+
+            if (!telegram_id) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Telegram ID is required'
+                });
+            }
+
+            // Get user
+            const user = await this.db.getUserByTelegramId(telegram_id);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'User not found'
+                });
+            }
+
+            // Check if publication exists
+            const publication = await this.db.getPublicationById(id);
+            if (!publication) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Publication not found'
+                });
+            }
+
+            // Toggle like
+            const isLiked = await this.db.toggleLike(id, user.id);
+            const likeCount = await this.db.getLikeCount(id);
+
+            res.json({
+                success: true,
+                data: {
+                    isLiked,
+                    likeCount
+                }
+            });
+        } catch (error) {
+            console.error('Error toggling like:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to toggle like',
+                message: error.message
+            });
+        }
+    }
+
+    async addComment(req, res) {
+        try {
+            const { id } = req.params;
+            const { telegram_id, comment_text } = req.body;
+
+            if (!telegram_id || !comment_text) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Telegram ID and comment text are required'
+                });
+            }
+
+            // Get user
+            const user = await this.db.getUserByTelegramId(telegram_id);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'User not found'
+                });
+            }
+
+            // Check if publication exists
+            const publication = await this.db.getPublicationById(id);
+            if (!publication) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Publication not found'
+                });
+            }
+
+            // Add comment
+            const commentId = await this.db.addComment(id, user.id, comment_text);
+            const comments = await this.db.getComments(id);
+
+            res.json({
+                success: true,
+                data: {
+                    commentId,
+                    comments
+                }
+            });
+        } catch (error) {
+            console.error('Error adding comment:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to add comment',
+                message: error.message
+            });
+        }
+    }
+
+    async getComments(req, res) {
+        try {
+            const { id } = req.params;
+            const comments = await this.db.getComments(id);
+
+            res.json({
+                success: true,
+                data: comments
+            });
+        } catch (error) {
+            console.error('Error getting comments:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get comments',
+                message: error.message
+            });
+        }
+    }
+
+    async trackView(req, res) {
+        try {
+            const { id } = req.params;
+            const { telegram_id } = req.body;
+            const ipAddress = req.ip || req.connection.remoteAddress;
+            const userAgent = req.get('User-Agent');
+
+            // Get user if telegram_id provided
+            let userId = null;
+            if (telegram_id) {
+                const user = await this.db.getUserByTelegramId(telegram_id);
+                if (user) {
+                    userId = user.id;
+                }
+            }
+
+            // Add view
+            await this.db.addView(id, userId, ipAddress, userAgent);
+            const viewCount = await this.db.getViewCount(id);
+
+            res.json({
+                success: true,
+                data: {
+                    viewCount
+                }
+            });
+        } catch (error) {
+            console.error('Error tracking view:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to track view',
                 message: error.message
             });
         }

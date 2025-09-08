@@ -5,6 +5,8 @@
   "main": "index.html",
   "scripts": {
     "start": "npx http-server -p 3000 -c-1",
+    "backend": "node start-backend.js",
+    "dev": "concurrently \"npm start\" \"npm run backend\"",
     "build": "echo 'No build process needed for static files'",
     "deploy": "echo 'Deploy to your hosting service'"
   },
@@ -18,7 +20,8 @@
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=14.0.0"

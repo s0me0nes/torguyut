@@ -175,44 +175,59 @@
 
         <!-- Основной контент -->
         <main class="main-content" id="main-content" style="display: none;">
-            <!-- Форма создания объявления -->
-            <div class="publication-form" id="publication-form">
-                <h2>Создать объявление</h2>
-                
-                <div class="form-group">
-                    <label for="item-title">Название товара</label>
-                    <input type="text" id="item-title" placeholder="Введите название товара" maxlength="100">
-                </div>
-
-                <div class="form-group">
-                    <label for="item-description">Описание</label>
-                    <textarea id="item-description" placeholder="Опишите товар" maxlength="500"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="item-price">Цена (руб.)</label>
-                    <input type="number" id="item-price" placeholder="0" min="0">
-                </div>
-
-                <div class="form-group">
-                    <label for="item-images">Фотографии (до 5 шт.)</label>
-                    <input type="file" id="item-images" multiple accept="image/*" max="5">
-                    <div class="image-preview" id="image-preview"></div>
-                </div>
-
-                <button id="publish-btn" class="publish-btn" disabled>
-                    <span class="btn-text">Опубликовать за 1 💎</span>
-                    <span class="btn-timer" id="btn-timer" style="display: none;"></span>
-                </button>
-            </div>
-
-            <!-- Список объявлений -->
+            <!-- Список объявлений (показывается по умолчанию) -->
             <div class="publications-list" id="publications-list">
-                <h2>Объявления</h2>
+                <div class="publications-header">
+                    <h2>Объявления</h2>
+                    <div class="publications-stats">
+                        <span id="publications-count">0 объявлений</span>
+                    </div>
+                </div>
                 <div class="publications-container" id="publications-container">
                     <!-- Объявления будут загружаться здесь -->
                 </div>
             </div>
+
+            <!-- Форма создания объявления (скрыта по умолчанию) -->
+            <div class="publication-form" id="publication-form" style="display: none;">
+                <div class="form-header">
+                    <button class="back-to-list-btn" id="back-to-list-btn">← Назад к объявлениям</button>
+                    <h2>Создать объявление</h2>
+                </div>
+                
+                <div class="form-content">
+                    <div class="form-group">
+                        <label for="item-title">Название товара</label>
+                        <input type="text" id="item-title" placeholder="Введите название товара" maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="item-description">Описание</label>
+                        <textarea id="item-description" placeholder="Опишите товар" maxlength="500"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="item-price">Цена (руб.)</label>
+                        <input type="number" id="item-price" placeholder="0" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="item-images">Фотографии (до 5 шт.)</label>
+                        <input type="file" id="item-images" multiple accept="image/*" max="5">
+                        <div class="image-preview" id="image-preview"></div>
+                    </div>
+
+                    <button id="publish-btn" class="publish-btn" disabled>
+                        <span class="btn-text">Опубликовать за 1 💎</span>
+                        <span class="btn-timer" id="btn-timer" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Плавающая кнопка + -->
+            <button class="floating-add-btn" id="floating-add-btn" title="Создать объявление">
+                <span class="plus-icon">+</span>
+            </button>
         </main>
     </div>
 
