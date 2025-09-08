@@ -1,12 +1,35 @@
+:root {
+    --primary-color: #1a365d;
+    --secondary-color: #2c5282;
+    --accent-color: #c53030;
+    --text-color: #2d3748;
+    --light-bg: #f7fafc;
+    --dark-bg: #1a202c;
+    --gold: #d4af37;
+}
+
 /* Общие стили */
 body {
     padding-top: 76px;
+    font-family: 'Playfair Display', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color);
+    background-color: var(--light-bg);
+}
+
+/* Типография */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+}
+
+.accent-text {
+    color: var(--gold);
 }
 
 /* Поисковая секция */
 .search-section {
-    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
-                url('https://via.placeholder.com/1920x600') no-repeat center center;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)),
+                url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920') no-repeat center center;
     background-size: cover;
     padding: 100px 0;
     margin-top: -76px;
@@ -134,15 +157,18 @@ body {
 }
 
 .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
+    background-color: #2c3e50;
+    border-color: #2c3e50;
     transition: all 0.3s ease;
+    padding: 12px 25px;
+    font-weight: 500;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
+    background-color: #34495e;
+    border-color: #34495e;
     transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 /* Стили для фильтров */
@@ -415,6 +441,171 @@ body {
     font-weight: bold;
     color: #007bff;
     margin-bottom: 10px;
+}
+
+/* Стили для главного слайдера */
+.main-slider {
+    height: 100vh;
+    margin-top: -76px;
+}
+
+.main-slider .swiper-slide {
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.main-slider .swiper-slide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+}
+
+.slide-content {
+    position: relative;
+    color: white;
+    text-align: center;
+    max-width: 800px;
+    padding: 0 20px;
+}
+
+.main-slider .swiper-button-next,
+.main-slider .swiper-button-prev {
+    color: white;
+}
+
+.main-slider .swiper-pagination-bullet {
+    background: white;
+    opacity: 0.7;
+}
+
+.main-slider .swiper-pagination-bullet-active {
+    opacity: 1;
+}
+
+/* Стили для отзывов */
+.testimonials-slider {
+    padding: 30px 0;
+}
+
+.testimonials-slider .swiper-slide {
+    height: auto;
+}
+
+.review-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    height: 100%;
+}
+
+.review-author {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.review-author img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.rating {
+    color: var(--gold);
+    font-size: 14px;
+}
+
+/* Стили для карты */
+.map-container {
+    height: 500px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+/* Стили для профиля */
+.profile-btn {
+    padding: 0;
+    border: none;
+    background: none;
+    display: flex;
+    align-items: center;
+}
+
+.profile-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+}
+
+.profile-photo-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--gold);
+}
+
+.profile-menu {
+    position: relative;
+}
+
+#profileSidebar {
+    width: 350px;
+}
+
+.profile-actions .list-group-item {
+    border: none;
+    padding: 12px 20px;
+    margin-bottom: 5px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.profile-actions .list-group-item:hover {
+    background-color: var(--light-bg);
+    transform: translateX(5px);
+}
+
+.quick-actions .btn {
+    padding: 15px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.quick-actions .btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.quick-actions .btn i {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.stats-card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.stats-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary-color);
 }
 
 /* Стили для уведомлений */
